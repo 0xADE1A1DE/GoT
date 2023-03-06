@@ -1,0 +1,9 @@
+main
+mock_binary
+test
+res/*
+tables/*
+.vscode/settings.json
+*.pyc
+build/*
+.vscode/*
