@@ -21,4 +21,5 @@ typedef struct {
 } measure_metadata;
 
 extern const measure_metadata tree_amplification_100us_measure_metadata;
+extern const measure_metadata tree_amplification_1ms_measure_metadata;
 extern const measure_metadata rdtsc_measure_metadata;

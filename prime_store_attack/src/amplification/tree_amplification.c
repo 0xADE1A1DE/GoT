@@ -136,3 +136,30 @@ amplification_metadata tree_amplification_100us = {
     .amplify = td3md2width8_100us_amplify,
     .verify = td3md2width8_100us_verify
 };
+
+
+#define AMPLIFICATION_MULTIPLIER_1MS (64)
+
+uintptr_t td3md2width8_1ms_initialize_amplification(amplification_metadata *amplification, uintptr_t trash) {
+    return initialize_amplification(amplification, trash, td3md2width8_amplification_metadata);
+}
+
+static int td3md2width8_1ms_counter = 0;
+
+uintptr_t td3md2width8_1ms_meta_amplify(uintptr_t speculatee, int leaf_index, int meta_depth, int leafs_to_recurse, uintptr_t trash) {
+    return meta_amplify(speculatee, leaf_index, meta_depth, leafs_to_recurse, trash, td3md2width8_amplification_metadata, td3md2width8_1ms_meta_amplify);
+}
+
+uintptr_t td3md2width8_1ms_amplify(uintptr_t target, uintptr_t trash) {
+    return td3md2width8_1ms_meta_amplify(target, td3md2width8_1ms_counter++, 0, AMPLIFICATION_MULTIPLIER_1MS, trash);
+}
+
+bool td3md2width8_1ms_verify(amplification_metadata *metadata) {
+    return tree_amplification_verify(metadata, td3md2width8_amplification_metadata, AMPLIFICATION_MULTIPLIER_1MS);
+}
+
+amplification_metadata tree_amplification_1ms = {
+    .initialize = td3md2width8_1ms_initialize_amplification,
+    .amplify = td3md2width8_1ms_amplify,
+    .verify = td3md2width8_1ms_verify
+};

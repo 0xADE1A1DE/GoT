@@ -100,4 +100,33 @@ uintptr_t __always_inline _nbt_not(int wet_run, gate_bank *bank, uintptr_t trash
 
 #define DEFINE_NBT_GATE(operation, input_fanout, output_fanout) DEFINE_GATE(nbt, operation, false, input_fanout, output_fanout, "no branch training")
 
+DEFINE_NBT_GATE(nand, 2, 1);
+DEFINE_NBT_GATE(nand, 3, 1);
+DEFINE_NBT_GATE(nand, 4, 1);
+DEFINE_NBT_GATE(nand, 5, 1);
+DEFINE_NBT_GATE(nand, 6, 1);
+DEFINE_NBT_GATE(nand, 7, 1);
+DEFINE_NBT_GATE(nand, 8, 1);
+DEFINE_NBT_GATE(nand, 9, 1);
+DEFINE_NBT_GATE(nand, 10, 1);
+DEFINE_NBT_GATE(nand, 11, 1);
+DEFINE_NBT_GATE(nand, 12, 1);
+DEFINE_NBT_GATE(nand, 13, 1);
+DEFINE_NBT_GATE(nand, 14, 1);
+
+DEFINE_NBT_GATE(not, 1, 1);
+DEFINE_NBT_GATE(not, 1, 2);
+DEFINE_NBT_GATE(not, 1, 3);
+DEFINE_NBT_GATE(not, 1, 4);
+DEFINE_NBT_GATE(not, 1, 5);
+DEFINE_NBT_GATE(not, 1, 6);
+DEFINE_NBT_GATE(not, 1, 7);
+DEFINE_NBT_GATE(not, 1, 8);
+DEFINE_NBT_GATE(not, 1, 9);
+DEFINE_NBT_GATE(not, 1, 10);
+DEFINE_NBT_GATE(not, 1, 11);
+DEFINE_NBT_GATE(not, 1, 12);
+DEFINE_NBT_GATE(not, 1, 13);
+DEFINE_NBT_GATE(not, 1, 14);
+
 DEFINE_NBT_GATE(nand, 12, 2);

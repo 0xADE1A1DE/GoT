@@ -28,7 +28,6 @@ retention_scheme initialize_retention_scheme(retention_metadata metadata, evicti
     assert(metadata.pages > 24);  // Avoid prefetcher
     int used_eviction_sets = metadata.pages / metadata.per_ev;
     assert(used_eviction_sets <= 128); // Number of eviction sets we're finding.
-    assert((1 <= metadata.shrink_factor) && (metadata.shrink_factor <= 6));
 
     retention_scheme result = {.metadata=metadata, .retention_pages = NULL};
     result.retention_pages = malloc(sizeof(uintptr_t *) * metadata.pages);
@@ -43,6 +42,12 @@ retention_scheme initialize_retention_scheme(retention_metadata metadata, evicti
             }
         }
     }
+
+    // for (int i = 0; i < used_eviction_sets; i++) {
+    //     for (int j = 0; j < metadata.per_ev; j++)
+    //         result.retention_pages[metadata.per_ev * i + j] = eviction_sets[i].arr[j];
+    //         // result.retention_pages[used_eviction_sets * j + i] = eviction_sets[i].arr[j];
+    // }
 
     int current_idx = 0;
     for (int i = 0; i < 32; i++) {

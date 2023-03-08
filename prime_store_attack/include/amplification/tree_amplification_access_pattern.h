@@ -19,13 +19,13 @@ typedef struct {
     // This should match the width paramater.
     gate_metadata *amplification_gate;
 
-    // These are parameters specific for our scheme.
+    // These are paramaters specific for our scheme.
     int initial_double_cache_line;
     int double_cache_lines_per_tree;
-    int total_tree_nodes; // precomputed `sum(width**i) for i in 1..tree_depth`
+    int total_tree_nodes; // a precomputed `sum(width**i) for i in 1..tree_depth`
     int trees_in_allocation; // TODO: comment suggesting how this is picked.
 
-    // These are optimized functions tailored for the width.
+    // These are preoptimized functions considering the width.
     get_layer_start_func_type get_layer_start;
     cache_lines_per_layer_func_type cache_lines_per_layer;
 

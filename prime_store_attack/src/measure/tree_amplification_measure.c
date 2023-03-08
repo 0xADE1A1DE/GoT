@@ -16,6 +16,32 @@ uint64_t __always_inline tree_amplification_measure(uintptr_t candidate, uintptr
     return end - start + (trash == 0xbaaaaad);
 }
 
+uint64_t tree_amplification_1ms_measure(uintptr_t candidate, uintptr_t trash);
+bool tree_amplification_1ms_is_in_cache(uint64_t result);
+bool tree_amplification_1ms_probe(node *set, uintptr_t candidate);
+
+const measure_metadata tree_amplification_1ms_measure_metadata = {
+    .probe_trials = 7,
+    .threshold = TREE_AMPLIFICATION_1MS_RDTSC_THRESHOLD,
+    .units = UNITS_RDTSC,
+    .measure = tree_amplification_1ms_measure,
+    .is_in_cache = tree_amplification_1ms_is_in_cache,
+    .probe = tree_amplification_1ms_probe
+};
+
+uint64_t tree_amplification_1ms_measure(uintptr_t candidate, uintptr_t trash) {
+    return tree_amplification_measure(candidate, trash, rdtsc, tree_amplification_1ms);
+}
+
+bool __attribute__ ((noinline)) tree_amplification_1ms_is_in_cache(uint64_t result) {
+    return common_is_in_cache(result, tree_amplification_1ms_measure_metadata);
+}
+
+bool __attribute__ ((noinline)) tree_amplification_1ms_probe(node *set, uintptr_t candidate) {
+    return common_probe(set, candidate, tree_amplification_1ms_measure_metadata);
+}
+
+
 uint64_t tree_amplification_100us_measure(uintptr_t candidate, uintptr_t trash);
 bool tree_amplification_100us_is_in_cache(uint64_t result);
 bool tree_amplification_100us_probe(node *set, uintptr_t candidate);
