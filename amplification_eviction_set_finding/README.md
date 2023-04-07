@@ -1,111 +1,134 @@
-# Reproduction Instructions
+# Preparation
 
-## Setup
-
-Ensure the tests are running on a laptop with i5-8250U, if not your milage may vary.
-
-### Performance mode
-
-To setup running in performance mode (meaning the processor is running exclusively on one frequency), running as superuser:
+## Figures 8 and 9:
 
 ```bash
-for i in {0..7}; do echo performance > /sys/devices/system/cpu/cpu$i/cpufreq/scaling_governor; done
+# building
+cd ~/GoT/amplification_eviction_set_finding/src/
+rm -rf ../build
+mkdir ../build
+make all
+rm -rf ~/figure_8_9
+cp -r ../build ~/figure_8_9
+
+# Chrome had an issue with loading wasm from a local file IIRC.
+python3 -m http.server --directory ~/figure_8_9/ 8089 &
 ```
 
-As a means to verify the above command has previously ran, one can run:
+## Figure 10:
 
 ```bash
-cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+# building
+cd ~/GoT/amplification_eviction_set_finding/src/
+rm -rf ../build
+mkdir ../build
+CFLAGS="-DCHROME" make wasm
+rm -rf ~/figure_10
+cp -r ../build ~/figure_10
+
+# Chrome had an issue with loading wasm from a local file IIRC.
+python3 -m http.server --directory ~/figure_10/ 8010 &
 ```
 
-### Chromium
+# Basic Test
 
-The code for testing amplification schemes currently assumes access to microarchitectural opcodes, particularly `clflush`. It uses to evict the 'root memory line' out of cache.
+We expect that at `~/figure_8_9`, there would be a binary `main`
 
-Ensure chromium is compiled with the supplied `v8.diff`.
+It should output:
 
-## Table 2: Accuracy of gates on Intel Core(TM) i5-8250U
+```
+Usage: /home/usenix/figure_8_9/main [experiment]
 
-Compile `for_publication_cpp` branch at commit `d19206bf40d1cc50d0a626b2aa31de66c1fcf005`
+            test_amplification          Test the tree amplification.
 
-```bash
-# laptop
-/tmp/main test_gates > /tmp/test_gates_result
+                    test_fetch          Test fetch_address and rdtsc measurement.
+
+                    test_gates          Test the various gates.
+
+                       test_ev          Test eviction finding code.
 ```
 
-The script `parse_test_gates` converts the output to the latex needed by the paper.
+Furthermore, using `google-chrome` or the patched `chromium` verify `http://localhost:8089/` and `http://localhost:8010/` provide a directory listing.
+
+Entering `main.html` shall start the experiment.
+
+Note that Figure 9's experiment requires access to our native JS function, and would not work on `google-chrome`
+
+# Evaluation workflow
+
+## Figure 8:
 
 ```bash
-#host machine
-python scripts/parse_test_gates.py -i /mnt/toshiba/tmp/test_gates_result
-```
+# Create a raw output file.
+touch /tmp/amplification_100ms.txt && rm /tmp/amplification_100ms.txt
 
-## Table 5: Accuracy and run time for `nbt nand 12to1` and `nbt not 1to2` gates with different number of cases on Intel Core(TM) i5-8250U
-
-Compile `switch_sizes` at commit `ee3bfd86a353e218f0a8ca4eb352b19cf1c8ef1a`
-
-```bash
-# To compile, host machine
-for i in {1..16} do SWITCH_SIZE=$i make out
-
-# Run 16 binaries, laptop
-for i in {1..16}; do echo "Switch size $i" >> /tmp/res.txt; /tmp/main$i test_gates >> /tmp/res.txt;  done
-
-# Parse to latex, host machine
-python scripts/parse_switch_test_gates.py -i /mnt/toshiba/tmp/res.txt
-```
-
-## Figure 8: Amplification Hyper-Tree in Native
-
-Compile `for_publication_cpp` branch at commit `b0e02df4c56e380ed0d27c82d214360a7dd83d6c` 
-
-```bash
-# laptop
-touch /tmp/amplification_100ms && rm /tmp/amplification_100ms
 # Aggregate 10 runs
-for i in {1..10}; do echo $i; /tmp/main test_amplification >> /tmp/amplification_100ms; done
-# Unify the outputs, host machine
-python3 scripts/unify_multiple_test_amplification_graph.py /mnt/toshiba/tmp/wasm_amplification_1ms.txt  /mnt/toshiba/tmp/unified_wasm_amplification_1ms.txt
+for i in {1..10}; do echo $i; ~/figure_8_9/main test_amplification >> /tmp/amplification_100ms.txt; done
 
-python scripts/test_amplification_graph.py -i /mnt/toshiba/tmp/unified_amplification_100ms
+# Unify the outputs
+python3 ~/GoT/amplification_eviction_set_finding/scripts/unify_multiple_test_amplification_graph.py /tmp/amplification_100ms.txt /tmp/unified_amplification_100ms.txt
 ```
 
-## Figure 9: Amplification Hyper-Tree in WebAssembly.
-
-Compile `for_publication_cpp` branch at commit `b0e02df4c56e380ed0d27c82d214360a7dd83d6c` 
+The resulting file `unified_amplification_100ms.txt` is the artifact of this experiment. It can be drawn into a graph by:
 
 ```bash
-# laptop, this is a path to the custom chromium.
-out/Default/chrome --js-flags="--allow-natives-syntax" http://localhost:8000/ 2>/tmp/wasm_amplification_1ms.txt
-# I ran this, loaded main.html, and refreshed the page 10 times, after that:
-# host machine:
-python3 scripts/unify_multiple_test_amplification_graph.py /mnt/toshiba/tmp/wasm_amplification_1ms.txt  /mnt/toshiba/tmp/unified_wasm_amplification_1ms.txt
-python scripts/test_amplification_graph.py -i /mnt/toshiba/tmp/unified_wasm_amplification_1ms.txt
+python3 ~/GoT/amplification_eviction_set_finding/scripts/test_amplification_graph.py -i /tmp/unified_amplification_100ms.txt
 ```
 
-## Figure 10: Time to find an eviction set in Chrome using 0.1 millisecond low-resolution timer
+## Figure 9:
 
-Compile `for_publication_cpp` branch at commit `b7f7268b0ea08d52ac817fc881cb5ba28c0086d1`
+Run chromium and surf into `http://localhost:8089/main.html`.
+
+Refresh the page 10 times (important: let the run finish, visual cues are non trivial).
 
 ```bash
-# host machine
-CFLAGS="-DCHROME" make wasm && scp -r ../build/main* acrypto@10.0.0.20:/tmp/
-# laptop
-CHROME_LOG_FILE=/tmp/wasm_ev_chrome.txt google-chrome --enable-logging --v=0 http://localhost:8000/
-python3 test_ev.py -i wasm_ev_chrome.txt -o wasm_ev_chrome.json # ALONGSIDE chrome, do not close it!
+/home/acrypto/Documents/daniel/out/Default/chrome --js-flags="--allow-natives-syntax" http://localhost:8089/main.html 2>/tmp/wasm_amplification_1ms.txt
 ```
 
-## Unaccounted results:
+Note: When WASM code is running, Emscripten attempt to display a logo after a few seconds. This experiment is relatively fast, it may not show up. Indeed once the code is finished the page is responsive and the logo is no longer visible. Each run usually takes 5-10 seconds, so to be extra safe 20 seconds should suffice.
 
-Some experiments were not done by me, these are:
+![image-20230330100015062](https://i.imgur.com/PQxVqYz.png)
 
-* Table 1: Game of Life Glider Accuracy
-* Table 3: Accuracy of gates on AMD Ryzen 5 3500U
-* Table 4: Accuracy of gates on Apple M1 and Samsung Exynos 2100
-* Figure 3: ALU Accuracy.
-* Figure 4: SHA-1 Accuracy
-* Figure 9: A segment of samples of the square operation in modular exponentiation. The bottom show samples in which we detect eviction. The top shows the sample density. Peaks with density above 15 correspond to a square operation.
-* Figure 10: Distribution of Stitched Key in Relation to Ground Truth Location
-* Figure 11: T-tetromino Heatmap (calculated from 300 repetitions, the brighter the cell the higher accuracy)
-* Figure 12: One Generation Game of Life Accuracy
-* Claims about T-test analysis (relating to Figures 8 and 9)
+Once done, you should have:
+
+* 1 line of `127.0.0.1 - - [timestamp] "GET /main.html HTTP/1.1" 200 -` visible in your terminal.
+
+* 9 lines of `127.0.0.1 - - [timestamp] "GET /main.html HTTP/1.1" 304 -` visible in your terminal.
+
+Next unify the outputs.
+
+```bash
+python3 ~/GoT/amplification_eviction_set_finding/scripts/unify_multiple_test_amplification_graph.py /tmp/wasm_amplification_1ms.txt /tmp/unified_wasm_amplification_1ms.txt
+```
+
+The resulting file `unified_wasm_amplification_1ms.txt` is the artifact of this experiment. It can be drawn into a graph by:
+
+```bash
+python3 ~/GoT/amplification_eviction_set_finding/scripts/test_amplification_graph.py -i /tmp/unified_wasm_amplification_1ms.txt
+```
+
+# Figure 10:
+
+Important: In Chrome, we do not have a virtual address to physical address primitive, and we cannot directly ascertain from within the browser if we indeed found an eviction set. As such, it is crucial to run `test_ev.py` **alongside** `google-chrome`, that is while chrome is still running.
+
+```bash
+# To start running.
+CHROME_LOG_FILE=/tmp/wasm_ev_chrome.txt google-chrome --enable-logging --v=0 http://localhost:8010/main.html &
+```
+
+Contrary to the previous experiment, visual cue that the experiment is over is easy, as here the experiment is long enough for the logo to show up. Indeed when the logo is no longer visible. Also, after some time chrome may warn the page is unresponsive, you can safely ignore this.
+
+```bash
+# Chrome may move the WASM heap after some time of inactivity, thus invalidating the offsets printed out during the run.
+# This script should be ran close to the finish of the experiment, and while google-chrome is still running!
+sudo python3 ~/GoT/amplification_eviction_set_finding/scripts/test_ev.py -i /tmp/wasm_ev_chrome.txt -o /tmp/wasm_ev_chrome.json
+sudo chmod 777 /tmp/wasm_ev_chrome.json
+```
+
+This script also draws the Figure.
+
+We consider `wasm_ev_chrome.json` to be the artifact, the figure can be drawn in a standalone fashion (without chrome running alongside) via:
+
+```bash
+python3 ~/GoT/amplification_eviction_set_finding/scripts/test_ev.py -i /tmp/wasm_ev_chrome.json --from-json
+```
